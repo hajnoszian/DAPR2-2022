@@ -18,6 +18,7 @@ mwdata2 <-
   mwdata2 %>% mutate(
   isRural = ifelse(location=="rural","rural","notrural")
 )
+
 ```
 Q1
 Fit model of wellbeing based on social interaction and rural status
