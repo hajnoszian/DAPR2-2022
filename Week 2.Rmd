@@ -48,6 +48,7 @@ Q6
 ?fct_relevel
 rest_spend$type <- fct_relevel(rest_spend$type, "No Music")
 levels(rest_spend$type)
+
 ```
 
 ```{r}
