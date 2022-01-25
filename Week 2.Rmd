@@ -1,0 +1,95 @@
+---
+title: "Week 2"
+author: "Ian Hajnosz"
+date: "1/24/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+rest_spend <- read_csv('https://uoepsy.github.io/data/RestaurantSpending.csv')
+head(rest_spend)
+```
+```{r}
+rest_spend$type <- as.factor(rest_spend$type)
+```
+
+Q2
+```{r}
+ggplot(data = rest_spend, aes(x = type, y = amount)) +
+  geom_boxplot() +
+  labs(x = 'Background music type', y = 'Restaurant spending (in GBP)')
+```
+Q3
+```{r}
+rest_spend %>%
+  group_by(type) %>%
+  summarise(n = n(), 
+            M = mean(amount), 
+            SD = sd(amount))
+```
+
+Q4
+```{r}
+mdl_rg <- lm(amount ~ type, data = rest_spend)
+mdl_rg
+
+summary(mdl_rg)
+anova(mdl_rg)
+
+```
+
+Q6
+```{r}
+?fct_relevel
+rest_spend$type <- fct_relevel(rest_spend$type, "No Music")
+levels(rest_spend$type)
+```
+
+```{r}
+mdl_rg <- lm(amount ~ type, data = rest_spend)
+summary(mdl_rg)
+```
+
+Q8
+```{r}
+contrasts(rest_spend$type) <- "contr.sum"
+mdl_stz <- lm(amount ~ type, data = rest_spend)
+summary(mdl_stz)
+levels(rest_spend$type)
+```
+You get the third type by adding (-(B1 + B2))
+You can see that even in the contrast. Look vertically (1 + 0 =1) multiply that by -1 and you get equal to the pop music -1 contrast
+
+```{r}
+
+query_groups <- tibble(type = levels(rest_spend$type))
+query_groups
+query_groups %>%
+  mutate(pred = predict(mdl_stz, newdata = .))
+```
+
+```{r}
+library(emmeans)
+```
+Q9
+```{r}
+
+levels(rest_spend$type)
+
+comp <- list("No Music - Some Music" = c(1, -1/2, -1/2),
+             "No Music - Pop Music" = c(1, 0, -1))
+
+emm <- emmeans(mdl_stz, ~ type)
+emm
+
+contrast(emm)
+comp_rest <- contrast(emm, method = comp) #notice the specified method here is our created "comp" thing, not the defaults in R
+comp_rest
+confint(comp_rest)
+```
+

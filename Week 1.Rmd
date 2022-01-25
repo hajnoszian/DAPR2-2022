@@ -1,0 +1,99 @@
+---
+title: "Week 1"
+author: "Ian Hajnosz"
+date: "1/17/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+mwdata2<-read_csv("https://uoepsy.github.io/data/wellbeing_rural.csv")
+mwdata2 <- 
+  mwdata2 %>% mutate(
+  isRural = ifelse(location=="rural","rural","notrural")
+)
+```
+Q1
+Fit model of wellbeing based on social interaction and rural status
+```{r}
+wb_mdl1 <- lm(wellbeing ~ social_int + isRural, data=mwdata2)
+summary(wb_mdl1)
+```
+
+Q2
+fit the null model for comparison
+```{r}
+null_model <- lm(wellbeing ~ 1, data = mwdata2)
+anova(null_model, wb_mdl1)
+```
+notice that F statistic is exactly the same as the one we got in our wb_mdl1 summary
+
+Q3
+Does outdoor time help our model at all?
+```{r}
+wb_mdl2 <- lm(wellbeing ~ social_int + isRural + outdoor_time, data=mwdata2)
+
+summary(wb_mdl2)
+summary(wb_mdl1)
+anova(wb_mdl1, wb_mdl2)
+```
+Q4
+```{r}
+scs_study <- read_csv("https://uoepsy.github.io/data/scs_study.csv")
+summary(scs_study)
+```
+Part 1: Beyond Neuroticism and its interaction with social comparison, does Openness predict symptoms of depression, anxiety and stress?
+
+Part 2: Beyond Neuroticism and its interaction with social comparison, do other personality traits predict symptoms of depression, anxiety and stress?
+
+```{r}
+scs_study <- 
+  scs_study %>%
+  mutate(
+    scs_mc = scs - mean(scs)
+  )
+
+fit1 <- lm(dass ~ zn * scs_mc, data = scs_study)
+fit2 <- lm(dass ~ zn * scs_mc + zo, data = scs_study)
+fit3 <- lm(dass ~ zn * scs_mc + zo + zc + ze + za + zn, data = scs_study)
+
+#non-mean centered versions--slightly different numbers, but same pattern here
+#fit1 <- lm(dass ~ zn * scs_mc, data = scs_study)
+#fit2 <- lm(dass ~ zn * scs_mc + zo, data = scs_study)
+#fit3 <- lm(dass ~ zn * scs_mc + zo + zc + ze + za + zn, data = scs_study)
+
+anova(fit1, fit2, fit3)
+
+```
+
+```{r}
+library(car)
+vif(fit3) #variance inflation factor
+# These are interpretable as the inflation in size of the confidence ellipse or ellipsoid for the coefficients of the term in comparison with what would be obtained for orthogonal data.
+#ie. vif tells us how much more variance the coefficients are interpreting compared to if those coefficients were uncorrelated (not-orthogonal) Numbers like 1 mean it doesn't matter. Numbers like 2 mean those coefficients are pulling double the weight they would if they were uncorrelated. 
+
+#here we see Agreeableness and Extraversion are the weak links, only really helping our model out because they are so correlated as to be doubling up on each other (but individually not doing much for the model)
+lm(dass~scs * zn + zo + zc + ze, data = scs_study) %>% summary()
+```
+
+Q5
+Comparing BIC and AIC
+```{r}
+dassNE <- lm(dass ~ zn + ze, data = scs_study[-35, ])
+dassOA <- lm(dass ~ zo + za, data = scs_study[-35, ])
+
+AIC(dassNE, dassOA)
+BIC(dassNE, dassOA)
+```
+
+model1 <- lm(wellbeing ~ social_int + outdoor_time, data = mwdata2)
+model2 <- lm(wellbeing ~ social_int + outdoor_time + age, data = mwdata2)
+model3 <- lm(wellbeing ~ social_int + outdoor_time + routine, data = mwdata2)
+model4 <- lm(wellbeing ~ social_int + outdoor_time + routine + age, data = mwdata2)
+model5 <- lm(wellbeing ~ social_int + outdoor_time + routine + steps_k, data = mwdata2)
